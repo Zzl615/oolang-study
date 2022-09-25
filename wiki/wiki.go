@@ -2,7 +2,7 @@
  * @Author: Noaghzil
  * @Date:   2022-09-25 15:32:17
  * @Last Modified by:   Noaghzil
- * @Last Modified time: 2022-09-25 21:45:27
+ * @Last Modified time: 2022-09-25 21:46:22
  */
 // 读写文件
 package main
@@ -40,29 +40,29 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hi, %s!", r.URL.Path[1:])
 }
 
-func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	t, err := template.ParseFiles(tmpl + ".html")
-	if err != nil {
-		// 错误处理： http error status code
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = t.Execute(w, p)
-	if err != nil {
-		// 错误处理： http error status code
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
 // func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-// 	// ParseFiles更好的方法是ParseFiles在程序初始化时调用一次
-// 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
+// 	t, err := template.ParseFiles(tmpl + ".html")
 // 	if err != nil {
 // 		// 错误处理： http error status code
 // 		http.Error(w, err.Error(), http.StatusInternalServerError)
 // 		return
 // 	}
+// 	err = t.Execute(w, p)
+// 	if err != nil {
+// 		// 错误处理： http error status code
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	}
 // }
+
+func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
+	// ParseFiles更好的方法是ParseFiles在程序初始化时调用一次
+	err := templates.ExecuteTemplate(w, tmpl+".html", p)
+	if err != nil {
+		// 错误处理： http error status code
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/view/"):]
