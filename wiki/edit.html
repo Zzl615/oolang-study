@@ -1,0 +1,12 @@
+<!-- 
+  @Author: Noaghzil
+  @Date:   2022-09-25 17:01:05
+  @Last Modified by:   Noaghzil
+  @Last Modified time: 2022-09-25 17:01:13
+-->
+<h1>Editing {{.Title}}</h1>
+
+<form action="/save/{{.Title}}" method="POST">
+<div><textarea name="body" rows="20" cols="80">{{printf "%s" .Body}}</textarea></div>
+<div><input type="submit" value="Save"></div>
+</form>
