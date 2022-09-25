@@ -2,7 +2,7 @@
  * @Author: Noaghzil
  * @Date:   2022-09-25 15:32:17
  * @Last Modified by:   Noaghzil
- * @Last Modified time: 2022-09-25 17:09:44
+ * @Last Modified time: 2022-09-25 21:45:27
  */
 // 读写文件
 package main
@@ -19,6 +19,8 @@ type Page struct {
 	Title string
 	Body  []byte
 }
+
+var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
 
 func (p *Page) save() error {
 	filename := p.Title + ".txt"
@@ -39,14 +41,34 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	t, _ := template.ParseFiles(tmpl + ".html")
-	t.Execute(w, p)
+	t, err := template.ParseFiles(tmpl + ".html")
+	if err != nil {
+		// 错误处理： http error status code
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = t.Execute(w, p)
+	if err != nil {
+		// 错误处理： http error status code
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
+
+// func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
+// 	// ParseFiles更好的方法是ParseFiles在程序初始化时调用一次
+// 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
+// 	if err != nil {
+// 		// 错误处理： http error status code
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/view/"):]
 	p, err := loadPage(title)
 	if err != nil {
+		// 错误处理：http跳转
 		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
 		return
 	}
@@ -57,6 +79,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/edit/"):]
 	p, err := loadPage(title)
 	if err != nil {
+		// 错误处理：没有内容
 		p = &Page{Title: title}
 	}
 	renderTemplate(w, "edit", p)
@@ -66,20 +89,23 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Path[len("/save/"):]
 	body := r.FormValue("body")
 	p := &Page{Title: title, Body: []byte(body)}
-	p.save()
+	err := p.save()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 	http.Redirect(w, r, "/view/"+title, http.StatusFound)
 }
 
-// func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		m := validPath.FindStringSubmatch(r.URL.Path)
-// 		if m == nil {
-// 			http.NotFound(w, r)
-// 			return
-// 		}
-// 		fn(w, r, m[2])
-// 	}
-// }
+func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		m := validPath.FindStringSubmatch(r.URL.Path)
+		if m == nil {
+			http.NotFound(w, r)
+			return
+		}
+		fn(w, r, m[2])
+	}
+}
 
 func main() {
 	http.HandleFunc("/", handler)
